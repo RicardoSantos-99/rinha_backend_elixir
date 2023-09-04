@@ -2,6 +2,7 @@ defmodule Rb.Application do
   use Application
 
   @impl true
+  @spec start(any, any) :: {:error, any} | {:ok, pid}
   def start(_type, _args) do
     connect_to_cluster(:timer.minutes(1))
 

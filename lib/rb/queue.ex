@@ -32,9 +32,8 @@ defmodule Rb.Queue do
       Map.update(state, :users, [user], fn users -> [user | users] end)
       |> Map.update(:total, 1, fn total -> total + 1 end)
 
-    if state.total == 1000 do
-      # save in database
-      # send(self(), {:done, state.users})
+    if state.total == 100 do
+      Rb.Persist.save(state.users)
 
       state =
         Map.update(state, :done, 1, fn done -> done + 1000 end)

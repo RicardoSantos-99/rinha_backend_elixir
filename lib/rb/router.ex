@@ -1,5 +1,6 @@
 defmodule Rb.Router do
   alias Rb.{Apelidos, Queue}
+  alias Ecto.UUID
   use Plug.Router
 
   plug(Plug.Parsers,
@@ -16,9 +17,12 @@ defmodule Rb.Router do
 
     case validate(user) do
       :ok ->
-        id = Ecto.UUID.generate()
+        id = UUID.generate()
         Apelidos.save(user["apelido"])
-        Queue.enqueue(Map.put(user, "id", id))
+
+        user
+        |> format_user(id)
+        |> Queue.enqueue()
 
         conn
         |> put_resp_content_type("application/json")
@@ -58,14 +62,29 @@ defmodule Rb.Router do
   end
 
   get "/contagem-pessoas" do
+    sql = """
+    SELECT COUNT(id) FROM users
+    """
+
+    count = Ecto.Adapters.SQL.query(Repo, sql, [])
+
     conn
     |> put_resp_content_type("application/json")
-    |> send_resp(200, "#{1000}")
+    |> send_resp(200, "#{count}")
   end
 
   def to_binary(uuid_string) when is_binary(uuid_string) do
     parts = uuid_string |> String.split("-", parts: 5)
     <<String.to_integer(Enum.join(parts), 16)::128>>
+  end
+
+  def binary_uuid(str) do
+    UUID.dump(str) |> then(fn {:ok, uuid} -> uuid end)
+  end
+
+  def format_user(user, id) do
+    Map.put(user, "id", binary_uuid(id))
+    |> Map.update!("nascimento", fn data -> Date.from_iso8601!(data) end)
   end
 
   # Função auxiliar para formatar o resultado do Postgrex

@@ -11,7 +11,8 @@ defmodule Rb.System do
     Supervisor.init(
       [
         Rb.Apelidos,
-        Rb.Queue
+        Rb.Queue,
+        Rb.Persist
       ],
       strategy: :one_for_one
     )

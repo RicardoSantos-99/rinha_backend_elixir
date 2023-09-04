@@ -46,12 +46,14 @@ defmodule Rb.Apelidos do
   end
 
   # Server
-
   @spec start_link(any) :: :ignore | {:error, any} | {:ok, pid}
   def start_link(opts) do
+    Process.sleep(Enum.random(1..5))
+
     case GenServer.whereis({:global, __MODULE__}) do
       nil ->
         GenServer.start_link(__MODULE__, opts, name: {:global, __MODULE__})
+
 
       _pid ->
         :ignore
