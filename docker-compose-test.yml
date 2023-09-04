@@ -1,0 +1,17 @@
+version: "3.5"
+services:
+  db:
+    container_name: rb
+    ports:
+      - "5432:5432"
+    image: postgres:latest
+
+    deploy:
+      resources:
+        limits:
+          cpus: "0.75"
+          memory: "1.5GB"
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=postgres

@@ -1,0 +1,59 @@
+version: "3.5"
+services:
+  api1: # API - Instância 01
+    image: myelixirapi
+    hostname: api1
+    depends_on:
+      - db
+    expose:
+      - "4000"
+    deploy:
+      resources:
+        limits:
+          cpus: "0.25"
+          memory: "0.5GB"
+
+  api2: # API - Instância 01
+    image: myelixirapi
+    hostname: api2
+    depends_on:
+      - db
+    expose:
+      - "4000"
+    deploy:
+      resources:
+        limits:
+          cpus: "0.25"
+          memory: "0.5GB"
+
+  nginx: # Load Balancer
+    image: nginx:latest
+    container_name: nginx
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - api1
+      - api2
+    ports:
+      - "9999:9999"
+    deploy:
+      resources:
+        limits:
+          cpus: "0.25"
+          memory: "0.5GB"
+
+  db:
+    container_name: rb
+    ports:
+      - "5432:5432"
+    image: postgres:latest
+
+    deploy:
+      resources:
+        limits:
+          cpus: "0.75"
+          memory: "1.5GB"
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=postgres
