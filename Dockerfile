@@ -6,6 +6,6 @@ COPY mix.exs mix.lock ./
 RUN mix deps.get
 COPY . .
 RUN mix compile
-COPY entrypoint.sh /app/entrypoint.sh
 EXPOSE 4000
-ENTRYPOINT ["/app/entrypoint.sh"]
+CMD ["mix", "run", "--no-halt"]
+

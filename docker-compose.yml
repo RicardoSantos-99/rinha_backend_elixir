@@ -47,7 +47,8 @@ services:
     ports:
       - "5432:5432"
     image: postgres:latest
-
+    volumes:
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql:ro
     deploy:
       resources:
         limits:

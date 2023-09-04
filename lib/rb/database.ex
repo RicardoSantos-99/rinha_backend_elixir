@@ -8,10 +8,11 @@ defmodule Rb.Database do
   def init(_opts) do
     {:ok, pid} =
       Postgrex.start_link(
-        hostname: "localhost",
+        # db
+        hostname: "db",
         username: "postgres",
         password: "postgres",
-        database: "load_test_dev"
+        database: "postgres"
       )
 
     {:ok, pid}

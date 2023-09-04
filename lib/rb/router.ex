@@ -14,24 +14,21 @@ defmodule Rb.Router do
   post "/pessoas" do
     user = conn.params
 
-    # todo validate all user params
-    if validate(user) do
-      TableHash.save_name(user["nome"])
+    case validate(user) do
+      :ok ->
+        id = UUID.uuid4()
+        TableHash.save_name(user["nome"])
+        Queue.enqueue(Map.put(user, "id", id))
 
-      id = UUID.uuid4()
+        conn
+        |> put_resp_content_type("application/json")
+        |> put_resp_header("Location", "/pessoas/#{id}")
+        |> send_resp(201, "ok")
 
-      Queue.enqueue(Map.put(user, "id", id))
-
-      # Location: /pessoas/[:id]
-
-      conn
-      |> put_resp_content_type("application/json")
-      |> put_resp_header("Location", "/pessoas/#{id}")
-      |> send_resp(201, "ok")
-    else
-      conn
-      |> put_resp_content_type("application/json")
-      |> send_resp(422, "Dados inválidos")
+      {status, error_message} ->
+        conn
+        |> put_resp_content_type("application/json")
+        |> send_resp(status, Jason.encode!(%{"error" => error_message}))
     end
   end
 
@@ -52,6 +49,12 @@ defmodule Rb.Router do
     conn
     |> put_resp_content_type("application/json")
     |> send_resp(404, "not found")
+  end
+
+  get "/pessoas" do
+    conn
+    |> put_resp_content_type("application/json")
+    |> send_resp(200, "")
   end
 
   get "/contagem-pessoas" do
@@ -75,54 +78,63 @@ defmodule Rb.Router do
   end
 
   def validate(user_map) do
-    [
-      validate_apelido(user_map["apelido"]),
-      validate_nome(user_map["nome"]),
-      validate_nascimento(user_map["nascimento"]),
-      validate_stack(user_map["stack"])
-    ]
-    |> Enum.all?(fn elem -> elem end)
-  end
-
-  defp validate_apelido(nil), do: false
-
-  defp validate_apelido(apelido) when byte_size(apelido) > 32,
-    do: false
-
-  defp validate_apelido(apelido) when not is_binary(apelido),
-    do: false
-
-  defp validate_apelido(_apelido), do: true
-
-  defp validate_nome(nil), do: false
-
-  defp validate_nome(nome) when byte_size(nome) > 100,
-    do: false
-
-  defp validate_nome(nome) when is_binary(nome) do
-    case TableHash.get_name(nome) do
-      nil -> true
-      _ -> false
+    with :ok <- validate_apelido(user_map["apelido"]),
+         :ok <- validate_nome(user_map["nome"]),
+         :ok <- validate_nascimento(user_map["nascimento"]),
+         :ok <- validate_stack(user_map["stack"]) do
+      :ok
+    else
+      error -> error
     end
   end
 
-  defp validate_nome(_), do: false
+  defp validate_apelido(nil), do: {:unprocessable_entity, "Apelido não pode ser nulo"}
 
-  defp validate_nascimento(nil), do: false
+  defp validate_apelido(apelido) when not is_binary(apelido),
+    do: {:bad_request, "Apelido deve ser uma string"}
+
+  defp validate_apelido(apelido) when byte_size(apelido) > 32,
+    do: {:unprocessable_entity, "Apelido é muito longo"}
+
+  defp validate_apelido(apelido) when is_binary(apelido) do
+    case TableHash.get_name(apelido) do
+      nil -> :ok
+      _ -> {:unprocessable_entity, "Apelido já existe"}
+    end
+  end
+
+  defp validate_nome(nil), do: {:unprocessable_entity, "Nome não pode ser nulo"}
+
+  defp validate_nome(nome) when not is_binary(nome),
+    do: {:bad_request, "Nome deve ser uma string"}
+
+  defp validate_nome(nome) when byte_size(nome) > 100,
+    do: {:unprocessable_entity, "Nome é muito longo"}
+
+  defp validate_nome(nome) when is_binary(nome), do: :ok
+
+  defp validate_nascimento(nil), do: {:unprocessable_entity, "Nascimento não pode ser nulo"}
 
   defp validate_nascimento(date) when is_binary(date) do
-    Regex.match?(~r/^\d{4}-\d{2}-\d{2}$/, date)
+    case Regex.match?(~r/^\d{4}-\d{2}-\d{2}$/, date) do
+      true -> :ok
+      _ -> {:Bad_request, "Nascimento inválido"}
+    end
   end
 
-  defp validate_nascimento(_), do: false
+  defp validate_nascimento(_), do: {:Bad_request, "Nascimento inválido"}
 
-  defp validate_stack(nil), do: true
+  defp validate_stack(nil), do: :ok
 
-  defp validate_stack(stack) when is_list(stack) do
-    Enum.all?(stack, &validate_stack_element/1)
+  defp validate_stack(stack) when not is_list(stack),
+    do: {:bad_request, "Stack deve ser uma lista"}
+
+  defp validate_stack(stack) do
+    case Enum.all?(stack, &validate_stack_element/1) do
+      true -> :ok
+      _ -> {:bad_request, "Stack inválido"}
+    end
   end
-
-  defp validate_stack(_), do: false
 
   defp validate_stack_element(element) do
     case element do
