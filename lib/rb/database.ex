@@ -14,9 +14,6 @@ defmodule Rb.Database do
         database: "load_test_dev"
       )
 
-    # Postgrex.query(pid, "SELECT nome FROM users limit 1", [])
-    # |> IO.inspect(label: "lib/rb/database.ex:18")
-
     {:ok, pid}
   end
 

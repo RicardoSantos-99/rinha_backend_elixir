@@ -8,7 +8,7 @@ defmodule Rb.Application do
   @impl true
   def start(_type, _args) do
     children = [
-      Rb.Database,
+      Rb.System,
       {Plug.Cowboy, scheme: :http, plug: Rb.Router, options: [port: 4000]}
       # Starts a worker by calling: Rb.Worker.start_link(arg)
       # {Rb.Worker, arg}
