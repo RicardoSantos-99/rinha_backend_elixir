@@ -7,5 +7,11 @@ RUN mix deps.get
 COPY . .
 RUN mix compile
 EXPOSE 4000
-CMD ["mix", "run", "--no-halt"]
+COPY start.sh /app/start.sh
+RUN chmod +x /app/start.sh
+
+
+# RUN echo $RELEASE_NODE
+
+ENTRYPOINT ["/app/start.sh"]
 

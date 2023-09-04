@@ -23,7 +23,7 @@ defmodule Rb.MixProject do
       {:plug_cowboy, "~> 2.0"},
       {:jason, "~> 1.4"},
       {:postgrex, "~> 0.17.3"},
-      {:uuid, "~> 1.1"}
+      {:ecto_sql, "~> 3.0"}
     ]
   end
 end

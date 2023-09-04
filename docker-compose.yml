@@ -1,53 +1,5 @@
 version: "3.5"
 services:
-  api1: # API - Instância 01
-    image: myelixirapi
-    hostname: api1
-    command: --name api1@api1 --cookie mycookie --no-halt
-    depends_on:
-      - db
-    expose:
-      - "4000"
-    deploy:
-      resources:
-        limits:
-          cpus: "0.25"
-          memory: "0.5GB"
-    networks:
-      - elixir_net
-
-  api2: # API - Instância 01
-    image: myelixirapi
-    hostname: api2
-    command: --name api2@api2 --cookie mycookie --no-halt
-    depends_on:
-      - db
-    expose:
-      - "4000"
-    deploy:
-      resources:
-        limits:
-          cpus: "0.25"
-          memory: "0.5GB"
-    networks:
-      - elixir_net
-
-  nginx: # Load Balancer
-    image: nginx:latest
-    container_name: nginx
-    volumes:
-      - ./nginx.conf:/etc/nginx/nginx.conf:ro
-    depends_on:
-      - api1
-      - api2
-    ports:
-      - "9999:9999"
-    deploy:
-      resources:
-        limits:
-          cpus: "0.25"
-          memory: "0.5GB"
-
   db:
     container_name: rb
     ports:
@@ -64,8 +16,59 @@ services:
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=postgres
       - POSTGRES_DB=postgres
-    networks:
-      - elixir_net
 
-networks:
-  elixir_net:
+  api1:
+    image: myelixirapi
+    hostname: api1.com
+    depends_on:
+      - db
+    environment:
+      HTTP_SERVER_PORT: 4000
+      RELEASE_COOKIE: "secret_cookie"
+      PEER_NODES: "api2@api2.com"
+      RELEASE_NODE: "api1@api1.com"
+      DB_CONNS: 200
+      DB_HOST: db
+    healthcheck:
+      test: curl -f http://api1:4000
+    deploy:
+      resources:
+        limits:
+          cpus: "0.275"
+          memory: "0.4GB"
+
+  api2:
+    image: myelixirapi
+    depends_on:
+      - api1
+    hostname: api2.com
+    environment:
+      HTTP_SERVER_PORT: 4000
+      RELEASE_COOKIE: "secret_cookie"
+      PEER_NODES: "api1@api1.com"
+      RELEASE_NODE: "api2@api2.com"
+      DB_CONNS: 200
+      DB_HOST: db
+    healthcheck:
+      test: curl -f http://api2:4000
+    deploy:
+      resources:
+        limits:
+          cpus: "0.275"
+          memory: "0.4GB"
+
+  nginx:
+    image: nginx:latest
+    container_name: nginx
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - api1
+      - api2
+    ports:
+      - "9999:9999"
+    deploy:
+      resources:
+        limits:
+          cpus: "0.25"
+          memory: "0.5GB"

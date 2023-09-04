@@ -10,7 +10,6 @@ defmodule Rb.System do
 
     Supervisor.init(
       [
-        Rb.Database,
         Rb.Apelidos,
         Rb.Queue
       ],

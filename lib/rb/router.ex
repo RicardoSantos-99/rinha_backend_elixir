@@ -16,7 +16,7 @@ defmodule Rb.Router do
 
     case validate(user) do
       :ok ->
-        id = UUID.uuid4()
+        id = Ecto.UUID.generate()
         Apelidos.save(user["apelido"])
         Queue.enqueue(Map.put(user, "id", id))
 
