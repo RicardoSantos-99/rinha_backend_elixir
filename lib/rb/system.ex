@@ -11,7 +11,7 @@ defmodule Rb.System do
     Supervisor.init(
       [
         Rb.Database,
-        Rb.TableHash,
+        Rb.Apelidos,
         Rb.Queue
       ],
       strategy: :one_for_one

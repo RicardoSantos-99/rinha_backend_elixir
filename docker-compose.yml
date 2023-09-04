@@ -3,6 +3,7 @@ services:
   api1: # API - Instância 01
     image: myelixirapi
     hostname: api1
+    command: --name api1@api1 --cookie mycookie --no-halt
     depends_on:
       - db
     expose:
@@ -12,10 +13,13 @@ services:
         limits:
           cpus: "0.25"
           memory: "0.5GB"
+    networks:
+      - elixir_net
 
   api2: # API - Instância 01
     image: myelixirapi
     hostname: api2
+    command: --name api2@api2 --cookie mycookie --no-halt
     depends_on:
       - db
     expose:
@@ -25,6 +29,8 @@ services:
         limits:
           cpus: "0.25"
           memory: "0.5GB"
+    networks:
+      - elixir_net
 
   nginx: # Load Balancer
     image: nginx:latest
@@ -58,3 +64,8 @@ services:
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=postgres
       - POSTGRES_DB=postgres
+    networks:
+      - elixir_net
+
+networks:
+  elixir_net:

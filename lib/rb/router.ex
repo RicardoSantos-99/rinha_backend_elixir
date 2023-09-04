@@ -1,5 +1,5 @@
 defmodule Rb.Router do
-  alias Rb.{TableHash, Queue}
+  alias Rb.{Apelidos, Queue}
   use Plug.Router
 
   plug(Plug.Parsers,
@@ -17,7 +17,7 @@ defmodule Rb.Router do
     case validate(user) do
       :ok ->
         id = UUID.uuid4()
-        TableHash.save_name(user["nome"])
+        Apelidos.save(user["apelido"])
         Queue.enqueue(Map.put(user, "id", id))
 
         conn
@@ -69,13 +69,13 @@ defmodule Rb.Router do
   end
 
   # Função auxiliar para formatar o resultado do Postgrex
-  defp format_result(%Postgrex.Result{columns: columns, rows: rows}) do
-    rows
-    |> Enum.map(fn row ->
-      Enum.zip(columns, row)
-      |> Enum.into(%{})
-    end)
-  end
+  # defp format_result(%Postgrex.Result{columns: columns, rows: rows}) do
+  #   rows
+  #   |> Enum.map(fn row ->
+  #     Enum.zip(columns, row)
+  #     |> Enum.into(%{})
+  #   end)
+  # end
 
   def validate(user_map) do
     with :ok <- validate_apelido(user_map["apelido"]),
@@ -97,8 +97,8 @@ defmodule Rb.Router do
     do: {:unprocessable_entity, "Apelido é muito longo"}
 
   defp validate_apelido(apelido) when is_binary(apelido) do
-    case TableHash.get_name(apelido) do
-      nil -> :ok
+    case Apelidos.get(apelido) do
+      false -> :ok
       _ -> {:unprocessable_entity, "Apelido já existe"}
     end
   end

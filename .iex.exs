@@ -1,4 +1,4 @@
-alias Rb.{Database, Queue, TableHash, Router}
+alias Rb.{Database, Queue, Apelidos, Router}
 
 user = %{
   "apelido" => "teste",

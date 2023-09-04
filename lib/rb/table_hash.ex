@@ -1,20 +1,20 @@
-defmodule Rb.TableHash do
+defmodule Rb.Apelidos do
   use GenServer
 
   def start do
     GenServer.start_link(__MODULE__, %{}, name: __MODULE__)
   end
 
-  def save_name(name) do
-    GenServer.cast(__MODULE__, {:key, name})
+  def save(apelido) do
+    GenServer.cast(__MODULE__, {:key, apelido})
   end
 
-  def get_names do
-    GenServer.call(__MODULE__, :get_names)
+  def get_apelidos do
+    GenServer.call(__MODULE__, :get_apelidos)
   end
 
-  def get_name(name) do
-    GenServer.call(__MODULE__, {:get_name, name})
+  def get(apelido) do
+    GenServer.call(__MODULE__, {:member, apelido})
   end
 
   # Server
@@ -24,38 +24,25 @@ defmodule Rb.TableHash do
 
   @impl true
   def init(_init_arg) do
-    {:ok, %{}}
+    {:ok, MapSet.new()}
   end
 
   @impl true
-  def handle_call(:get_names, _from, state) do
+  def handle_call(:get_apelidos, _from, state) do
     {:reply, state, state}
   end
 
   @impl true
-  def handle_call({:get_name, name}, _from, state) do
-    key = :erlang.phash2(name, 50000)
-
-    {:reply, Map.get(state, key), state}
+  def handle_call({:member, apelido}, _from, state) do
+    {:reply, MapSet.member?(state, apelido), state}
   end
 
   @impl true
-  def handle_cast({:key, name}, state) do
-    key = :erlang.phash2(name, 50000)
-
-    elements = Map.get(state, key)
-
-    state =
-      if is_nil(elements) do
-        Map.put(state, key, [name])
-      else
-        if Enum.member?(elements, name) do
-          state
-        else
-          Map.put(state, key, [name | elements])
-        end
-      end
-
-    {:noreply, state}
+  def handle_cast({:key, apelido}, state) do
+    if MapSet.member?(state, apelido) do
+      {:noreply, state}
+    else
+      {:noreply, MapSet.put(state, apelido)}
+    end
   end
 end
