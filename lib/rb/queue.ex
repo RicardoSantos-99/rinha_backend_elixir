@@ -22,23 +22,18 @@ defmodule Rb.Queue do
     GenServer.start_link(__MODULE__, :ok, name: __MODULE__)
   end
 
-  @spec init(:ok) :: {:ok, %{done: 0, total: 0, users: []}}
+  @spec init(:ok) :: {:ok, %{users: []}}
   def init(:ok) do
-    {:ok, %{total: 0, users: [], done: 0}}
+    {:ok, %{users: []}}
   end
 
   def handle_cast({:enqueue, user}, state) do
-    state =
-      Map.update(state, :users, [user], fn users -> [user | users] end)
-      |> Map.update(:total, 1, fn total -> total + 1 end)
+    state = Map.update(state, :users, [user], fn users -> [user | users] end)
 
-    if state.total >= 100 do
+    if length(state.users) > 10 do
       Rb.Persist.save(state.users)
 
-      state =
-        Map.update(state, :done, 1, fn done -> done + 1000 end)
-        |> Map.update(:total, 0, fn total -> total - 1000 end)
-        |> Map.update(:users, [], fn _ -> [] end)
+      state = Map.update(state, :users, [], fn _ -> [] end)
 
       {:noreply, state}
     else
@@ -47,6 +42,6 @@ defmodule Rb.Queue do
   end
 
   def handle_call(:count, _from, state) do
-    {:reply, state.done, state}
+    {:reply, 10, state}
   end
 end

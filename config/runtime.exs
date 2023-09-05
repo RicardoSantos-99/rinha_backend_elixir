@@ -5,4 +5,4 @@ config :rb, Repo,
   database: "postgres",
   username: "postgres",
   password: "postgres",
-  pool_size: 10
+  pool_size: 200

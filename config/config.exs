@@ -11,4 +11,4 @@ config :rb, ecto_repos: [Repo]
 
 import_config "#{config_env()}.exs"
 
-config :logger, level: :info
+config :logger, level: :error

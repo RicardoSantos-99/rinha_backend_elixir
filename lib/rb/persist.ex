@@ -20,7 +20,6 @@ defmodule Rb.Persist do
     VALUES ($1, $2, $3, $4, $5)
     """
 
-    # Ver ser vale a pena usar o flow
     Task.async_stream(
       users,
       fn user ->
@@ -33,11 +32,21 @@ defmodule Rb.Persist do
         ])
       end,
       ordered: false,
-      max_concurrency: 20
+      max_concurrency: 100
     )
     |> Enum.to_list()
 
     {:noreply, state}
+  end
+
+  def handle_info({:DOWN, _ref, :process, _pid, reason}, state) do
+    IO.inspect("ERROR")
+    IO.puts("GenServer crashed because of #{inspect(reason)}", label: "ERRO")
+    {:noreply, state}
+  end
+
+  def terminate(reason, _state) do
+    IO.inspect(reason, label: "ERRO")
   end
 
   defp transform_to_text(nil), do: ""
