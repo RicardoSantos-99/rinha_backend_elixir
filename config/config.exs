@@ -5,8 +5,10 @@ config :rb, Repo,
   database: "postgres",
   username: "postgres",
   password: "postgres",
-  pool_size: 10
+  pool_size: 200
 
 config :rb, ecto_repos: [Repo]
 
 import_config "#{config_env()}.exs"
+
+config :logger, level: :info

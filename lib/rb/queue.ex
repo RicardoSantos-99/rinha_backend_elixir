@@ -11,9 +11,9 @@ defmodule Rb.Queue do
     GenServer.cast(__MODULE__, {:enqueue, user})
   end
 
-  @spec get_users :: any
-  def get_users do
-    GenServer.call(__MODULE__, :get_users)
+  @spec count :: any
+  def count do
+    GenServer.call(__MODULE__, :count)
   end
 
   # Server
@@ -32,7 +32,7 @@ defmodule Rb.Queue do
       Map.update(state, :users, [user], fn users -> [user | users] end)
       |> Map.update(:total, 1, fn total -> total + 1 end)
 
-    if state.total == 100 do
+    if state.total >= 100 do
       Rb.Persist.save(state.users)
 
       state =
@@ -46,7 +46,7 @@ defmodule Rb.Queue do
     end
   end
 
-  def handle_call(:get_users, _from, state) do
-    {:reply, state, state}
+  def handle_call(:count, _from, state) do
+    {:reply, state.done, state}
   end
 end

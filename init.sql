@@ -1,9 +1,11 @@
 CREATE TABLE users (
-    id          UUID PRIMARY KEY,
+    id          UUID,
     nome        VARCHAR(255) NOT NULL,
     apelido     VARCHAR(255) NOT NULL,
     nascimento  DATE,
-    stack       VARCHAR(255)[]
+    stack       TEXT
 );
 ALTER TABLE users OWNER TO postgres;
-CREATE UNIQUE INDEX users_nome_index ON users (nome);
+
+CREATE EXTENSION IF NOT EXISTS pg_trgm;
+CREATE INDEX users_trgm ON users USING GIST ((apelido || ' ' || nome || ' ' || stack) gist_trgm_ops);

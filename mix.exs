@@ -20,6 +20,7 @@ defmodule Rb.MixProject do
 
   defp deps do
     [
+      {:plug, "~> 1.14"},
       {:plug_cowboy, "~> 2.0"},
       {:jason, "~> 1.4"},
       {:postgrex, "~> 0.17.3"},

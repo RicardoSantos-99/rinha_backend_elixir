@@ -1,27 +1,27 @@
-# alias Rb.{Queue, Apelidos, Router}
-# alias Ecto.Adapters.SQL
-# alias Ecto.UUID
+alias Rb.{Queue, Apelidos, Router, Persist, UsersCache}
+alias Ecto.Adapters.SQL
+alias Ecto.UUID
 
-# user = %{
-#   "id" => UUID.generate() |> UUID.dump() |> then(fn {:ok, uuid} -> uuid end),
-#   "apelido" => "tlçasdjfklasdjfsdklajfte",
-#   "nascimento" => Date.from_iso8601!("2000-10-01"),
-#   "nome" => "dsjfsdlçakfjlsdkçajtes",
-#   "stack" => ["Elixir", "Java"]
-# }
+user = %{
+  "id" => UUID.generate(),
+  "apelido" => "tlçasdjfklasdjfsdklajfte",
+  "nascimento" => Date.from_iso8601!("2000-10-01"),
+  "nome" => "dsjfsdlçakfjlsdkçajtes",
+  "stack" => ["Elixir", "Java"]
+}
 
-# sql = """
-# INSERT INTO users (stack, id, nascimento, apelido, nome)
-# VALUES ($1, $2, $3, $4, $5)
-# """
+sql = """
+INSERT INTO users (stack, id, nascimento, apelido, nome)
+VALUES ($1, $2, $3, $4, $5)
+"""
 
-# values = [
-#   Map.get(user, "stack"),
-#   Map.get(user, "id"),
-#   Map.get(user, "nascimento"),
-#   Map.get(user, "apelido"),
-#   Map.get(user, "nome")
-# ]
+values = [
+  Map.get(user, "stack"),
+  Map.get(user, "id"),
+  Map.get(user, "nascimento"),
+  Map.get(user, "apelido"),
+  Map.get(user, "nome")
+]
 
 # gen = fn ->
 #   [

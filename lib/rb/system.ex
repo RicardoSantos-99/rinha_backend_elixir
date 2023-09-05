@@ -12,7 +12,8 @@ defmodule Rb.System do
       [
         Rb.Apelidos,
         Rb.Queue,
-        Rb.Persist
+        Rb.Persist,
+        Rb.UsersCache
       ],
       strategy: :one_for_one
     )

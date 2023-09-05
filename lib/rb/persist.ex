@@ -29,7 +29,7 @@ defmodule Rb.Persist do
           Map.get(user, "nome"),
           Map.get(user, "apelido"),
           Map.get(user, "nascimento"),
-          Map.get(user, "stack")
+          transform_to_text(Map.get(user, "stack"))
         ])
       end,
       ordered: false,
@@ -39,4 +39,7 @@ defmodule Rb.Persist do
 
     {:noreply, state}
   end
+
+  defp transform_to_text(nil), do: ""
+  defp transform_to_text(list), do: Enum.join(list, " ")
 end

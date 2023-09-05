@@ -5,13 +5,14 @@ services:
     ports:
       - "5432:5432"
     image: postgres:latest
+    command: postgres -c 'max_connections=410'
     volumes:
       - ./init.sql:/docker-entrypoint-initdb.d/init.sql:ro
     deploy:
       resources:
         limits:
           cpus: "0.75"
-          memory: "1.5GB"
+          memory: "1.9GB"
     environment:
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=postgres
@@ -27,7 +28,7 @@ services:
       RELEASE_COOKIE: "secret_cookie"
       PEER_NODES: "api2@api2.com"
       RELEASE_NODE: "api1@api1.com"
-      DB_CONNS: 200
+      POOL_SIZE: 200
       DB_HOST: db
     healthcheck:
       test: curl -f http://api1:4000
@@ -35,7 +36,7 @@ services:
       resources:
         limits:
           cpus: "0.275"
-          memory: "0.4GB"
+          memory: "0.3GB"
 
   api2:
     image: myelixirapi
@@ -47,7 +48,7 @@ services:
       RELEASE_COOKIE: "secret_cookie"
       PEER_NODES: "api1@api1.com"
       RELEASE_NODE: "api2@api2.com"
-      DB_CONNS: 200
+      POOL_SIZE: 200
       DB_HOST: db
     healthcheck:
       test: curl -f http://api2:4000
@@ -55,7 +56,7 @@ services:
       resources:
         limits:
           cpus: "0.275"
-          memory: "0.4GB"
+          memory: "0.3GB"
 
   nginx:
     image: nginx:latest

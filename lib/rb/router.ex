@@ -1,15 +1,16 @@
 defmodule Rb.Router do
-  alias Rb.{Apelidos, Queue}
+  alias Rb.{Apelidos, Queue, UsersCache}
   alias Ecto.UUID
   use Plug.Router
 
+  plug(:match)
+
   plug(Plug.Parsers,
-    parsers: [:urlencoded, :multipart, :json],
-    pass: ["*/*"],
+    parsers: [:json],
+    pass: ["application/json"],
     json_decoder: Jason
   )
 
-  plug(:match)
   plug(:dispatch)
 
   post "/pessoas" do
@@ -21,7 +22,11 @@ defmodule Rb.Router do
         Apelidos.save(user["apelido"])
 
         user
-        |> format_user(id)
+        |> Map.put("id", id)
+        |> UsersCache.insert()
+
+        user
+        |> format_user_to_save(id)
         |> Queue.enqueue()
 
         conn
@@ -36,41 +41,50 @@ defmodule Rb.Router do
     end
   end
 
-  get "/pessoas/:id" do
-    # id = conn.params["id"]
+  get "/pessoas" do
+    conn = fetch_query_params(conn)
 
-    # {:ok, result} =
-    #   Rb.Database.query("SELECT * FROM users WHERE id = $1 LIMIT 1", [
-    #     to_binary(id)
-    #   ])
+    case conn.query_params do
+      %{"t" => term} ->
+        {:ok, users} = Repo.search_pessoas_by_term(term)
 
-    # [user] = format_result(result)
+        conn
+        |> put_resp_content_type("application/json")
+        |> send_resp(200, Jason.encode!(format_result(users)))
 
-    # response =
-    #   Map.update!(user, "id", fn _ -> id end)
-    #   |> Jason.encode!()
-
-    conn
-    |> put_resp_content_type("application/json")
-    |> send_resp(404, "not found")
+      _ ->
+        send_resp(conn, 400, "")
+    end
   end
 
-  get "/pessoas" do
-    conn
-    |> put_resp_content_type("application/json")
-    |> send_resp(200, "")
+  get "/pessoas/:id" do
+    id = conn.params["id"]
+
+    case UsersCache.get(id) do
+      nil ->
+        conn
+        |> put_resp_content_type("application/json")
+        |> send_resp(404, "not found")
+
+      user ->
+        conn
+        |> put_resp_content_type("application/json")
+        |> send_resp(200, Jason.encode!(user))
+    end
   end
 
   get "/contagem-pessoas" do
+    IO.inspect(Queue.count(), label: "TOTAL PROCESSADO NA FILA")
+
     sql = """
     SELECT COUNT(id) FROM users
     """
 
-    count = Ecto.Adapters.SQL.query(Repo, sql, [])
+    {:ok, %Postgrex.Result{rows: [[rows]]}} = Ecto.Adapters.SQL.query(Repo, sql, [])
 
     conn
     |> put_resp_content_type("application/json")
-    |> send_resp(200, "#{count}")
+    |> send_resp(200, "#{rows}")
   end
 
   def to_binary(uuid_string) when is_binary(uuid_string) do
@@ -82,19 +96,22 @@ defmodule Rb.Router do
     UUID.dump(str) |> then(fn {:ok, uuid} -> uuid end)
   end
 
-  def format_user(user, id) do
+  def format_user_to_save(user, id) do
     Map.put(user, "id", binary_uuid(id))
     |> Map.update!("nascimento", fn data -> Date.from_iso8601!(data) end)
   end
 
-  # Função auxiliar para formatar o resultado do Postgrex
-  # defp format_result(%Postgrex.Result{columns: columns, rows: rows}) do
-  #   rows
-  #   |> Enum.map(fn row ->
-  #     Enum.zip(columns, row)
-  #     |> Enum.into(%{})
-  #   end)
-  # end
+  defp format_result(%Postgrex.Result{rows: []}), do: []
+
+  defp format_result(%Postgrex.Result{columns: columns, rows: rows}) do
+    cols = Enum.map(columns, &String.to_atom/1)
+
+    Enum.map(rows, &(Enum.zip(cols, &1) |> Map.new()))
+    |> Enum.map(&Map.replace(&1, :stack, string_to_list(&1.stack)))
+  end
+
+  defp string_to_list(""), do: []
+  defp string_to_list(string), do: String.split(string, " ")
 
   def validate(user_map) do
     with :ok <- validate_apelido(user_map["apelido"]),
@@ -135,13 +152,13 @@ defmodule Rb.Router do
   defp validate_nascimento(nil), do: {:unprocessable_entity, "Nascimento não pode ser nulo"}
 
   defp validate_nascimento(date) when is_binary(date) do
-    case Regex.match?(~r/^\d{4}-\d{2}-\d{2}$/, date) do
+    case match?({:ok, _}, Date.from_iso8601(date)) do
       true -> :ok
-      _ -> {:Bad_request, "Nascimento inválido"}
+      _ -> {:bad_request, "Nascimento inválido"}
     end
   end
 
-  defp validate_nascimento(_), do: {:Bad_request, "Nascimento inválido"}
+  defp validate_nascimento(_), do: {:bad_request, "Nascimento inválido"}
 
   defp validate_stack(nil), do: :ok
 
