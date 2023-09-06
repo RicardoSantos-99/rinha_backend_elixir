@@ -5,7 +5,7 @@ config :rb, Repo,
   database: "postgres",
   username: "postgres",
   password: "postgres",
-  pool_size: 200
+  pool_size: 100
 
 config :rb, ecto_repos: [Repo]
 

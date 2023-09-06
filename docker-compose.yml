@@ -5,19 +5,18 @@ services:
     ports:
       - "5432:5432"
     image: postgres:latest
-    command: postgres -c wal_level=minimal -c fsync=off -c full_page_writes=off -c synchronous_commit=off -c shared_buffers=475MB -c maintenance_work_mem=100MB -c work_mem=10MB -c effective_cache_size=1.2GB -c max_connections=410 -c max_wal_senders=0
+    command: postgres  -c max_connections=410
     volumes:
       - ./init.sql:/docker-entrypoint-initdb.d/init.sql:ro
     deploy:
       resources:
         limits:
-          cpus: "0.75"
-          memory: "1.9GB"
+          cpus: "0.85"
+          memory: "2.4GB"
     environment:
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=postgres
       - POSTGRES_DB=postgres
-      - POSTGRES_HOST_AUTH_METHOD=trust
 
   api1:
     image: myelixirapi
@@ -37,7 +36,7 @@ services:
       resources:
         limits:
           cpus: "0.275"
-          memory: "0.3GB"
+          memory: "0.25GB"
 
   api2:
     image: myelixirapi
@@ -57,7 +56,7 @@ services:
       resources:
         limits:
           cpus: "0.275"
-          memory: "0.3GB"
+          memory: "0.25GB"
 
   nginx:
     image: nginx:latest
@@ -72,5 +71,5 @@ services:
     deploy:
       resources:
         limits:
-          cpus: "0.25"
-          memory: "0.5GB"
+          cpus: "0.15"
+          memory: "0.1GB"

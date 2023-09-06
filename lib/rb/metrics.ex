@@ -13,7 +13,7 @@ defmodule Rb.Metrics do
     [
       memory_usage: :erlang.memory(:total) |> memory_in_mb(),
       process_count: :erlang.system_info(:process_count),
-      nodes: Node.list()
+      nodes: Node.list([:this, :visible])
     ]
   end
 

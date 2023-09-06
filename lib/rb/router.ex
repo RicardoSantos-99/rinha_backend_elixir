@@ -13,31 +13,69 @@ defmodule Rb.Router do
 
   plug(:dispatch)
 
+  def get_str_attr() do
+    [
+      "apelido",
+      "nome",
+      "nascimento",
+      "stack"
+    ]
+  end
+
   post "/pessoas" do
-    user = conn.params
+    body =
+      conn.body_params
+      |> Map.take(get_str_attr())
+      |> Enum.map(fn {k, v} -> {String.to_existing_atom(k), v} end)
+      |> Map.new()
 
-    case validate(user) do
-      :ok ->
+    required = [:apelido, :nome, :nascimento]
+
+    body_rules = %{
+      apelido: [
+        fn v -> is_bitstring(v) end,
+        fn v -> String.length(v) <= 32 end
+      ],
+      nome: [
+        fn v -> is_bitstring(v) end,
+        fn v -> String.length(v) <= 100 end
+      ],
+      nascimento: [
+        fn v -> is_bitstring(v) end,
+        fn v -> match?({:ok, _}, Date.from_iso8601(v)) end
+      ],
+      stack: [
+        fn v -> is_nil(v) || is_list(v) end,
+        fn v -> Enum.all?(v || [], &is_bitstring/1) end
+      ]
+    }
+
+    cond do
+      # Apelidos.get(body.apelido) ->
+      #   send_resp(conn, 422, "")
+
+      not Enum.all?(required, fn k -> Map.get(body, k) end) ->
+        send_resp(conn, 422, "")
+
+      not Enum.all?(body_rules, fn {k, rules} -> Enum.all?(rules, fn f -> f.(body[k]) end) end) ->
+        send_resp(conn, 400, "")
+
+      true ->
         id = UUID.generate()
-        Apelidos.save(user["apelido"])
 
-        user
-        |> Map.put("id", id)
+        Apelidos.save(body.apelido)
+
+        body
+        |> Map.put(:id, id)
         |> UsersCache.insert()
 
-        user
+        body
         |> format_user_to_save(id)
         |> Queue.enqueue()
 
         conn
-        |> put_resp_content_type("application/json")
         |> put_resp_header("Location", "/pessoas/#{id}")
-        |> send_resp(201, "ok")
-
-      {status, error_message} ->
-        conn
-        |> put_resp_content_type("application/json")
-        |> send_resp(status, Jason.encode!(%{"error" => error_message}))
+        |> send_resp(201, id)
     end
   end
 
@@ -74,8 +112,6 @@ defmodule Rb.Router do
   end
 
   get "/contagem-pessoas" do
-    IO.inspect(Queue.count(), label: "TOTAL PROCESSADO NA FILA")
-
     sql = """
     SELECT COUNT(id) FROM users
     """
@@ -97,8 +133,8 @@ defmodule Rb.Router do
   end
 
   def format_user_to_save(user, id) do
-    Map.put(user, "id", binary_uuid(id))
-    |> Map.update!("nascimento", fn data -> Date.from_iso8601!(data) end)
+    Map.put(user, :id, binary_uuid(id))
+    |> Map.update!(:nascimento, fn data -> Date.from_iso8601!(data) end)
   end
 
   defp format_result(%Postgrex.Result{rows: []}), do: []

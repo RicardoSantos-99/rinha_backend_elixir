@@ -30,6 +30,6 @@ defmodule Rb.UsersCache do
   end
 
   def handle_call({:put, user}, _from, state) do
-    {:reply, :ok, Map.put(state, user["id"], user)}
+    {:reply, :ok, Map.put(state, user.id, user)}
   end
 end
