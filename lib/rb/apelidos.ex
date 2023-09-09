@@ -54,8 +54,8 @@ defmodule Rb.Apelidos do
       nil ->
         GenServer.start_link(__MODULE__, opts, name: {:global, __MODULE__})
 
-      _pid ->
-        :ignore
+      pid ->
+        {:ok, pid}
     end
   end
 

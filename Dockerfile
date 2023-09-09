@@ -10,8 +10,5 @@ EXPOSE 4000
 COPY start.sh /app/start.sh
 RUN chmod +x /app/start.sh
 
-
-# RUN echo $RELEASE_NODE
-
 ENTRYPOINT ["/app/start.sh"]
 

@@ -23,21 +23,20 @@ defmodule Rb.Queue do
     GenServer.start_link(__MODULE__, :ok, name: __MODULE__)
   end
 
-  @spec init(:ok) :: {:ok, %{users: []}}
+  @spec init(:ok) :: {:ok, %{users: [], count: number()}}
   def init(:ok) do
-    IO.inspect("START QUEUE")
     {:ok, %{users: [], count: 0}}
   end
 
   def handle_cast({:enqueue, user}, state) do
-    state = Map.update(state, :users, [user], fn users -> [user | users] end)
+    state =
+      Map.update(state, :users, [user], fn users -> [user | users] end)
+      |> Map.update!(:count, fn count -> count + 1 end)
 
-    if length(state.users) > 100 do
+    if length(state.users) >= 50 do
       DatabaseManager.save(state.users)
 
-      state =
-        Map.update(state, :users, [], fn _ -> [] end)
-        |> Map.update!(:count, fn count -> count + length(state.users) end)
+      state = Map.update(state, :users, [], fn _ -> [] end)
 
       {:noreply, state}
     else

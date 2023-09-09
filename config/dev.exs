@@ -1,3 +1,3 @@
 import Config
 
-System.put_env("HTTP_SERVER_PORT", "4000")
+System.put_env("PORT", System.get_env("PORT") || "4000")

@@ -24,14 +24,17 @@ defmodule Rb.Application do
   defp do_connect_to_cluster(timeout, start) do
     nodes = System.get_env("PEER_NODES")
 
+    {:ok, hostname} = :inet.gethostname()
+
     if nodes != nil do
       success =
         nodes
         |> String.split(",")
         |> Enum.reject(&(&1 == ""))
-        |> Enum.all?(&Node.connect(String.to_atom(&1)))
+        |> Enum.all?(&Node.connect(String.to_atom("#{&1}#{hostname}")))
 
       if success do
+        IO.inspect("Connected to cluster!")
         :ok
       else
         if System.monotonic_time(:second) - start > timeout do

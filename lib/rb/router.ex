@@ -13,69 +13,35 @@ defmodule Rb.Router do
 
   plug(:dispatch)
 
-  def get_str_attr() do
-    [
-      "apelido",
-      "nome",
-      "nascimento",
-      "stack"
-    ]
-  end
-
   post "/pessoas" do
-    body =
+    user =
       conn.body_params
-      |> Map.take(get_str_attr())
-      |> Enum.map(fn {k, v} -> {String.to_existing_atom(k), v} end)
-      |> Map.new()
+      |> Enum.into(%{}, fn {key, value} ->
+        {String.to_atom(key), value}
+      end)
 
-    required = [:apelido, :nome, :nascimento]
-
-    body_rules = %{
-      apelido: [
-        fn v -> is_bitstring(v) end,
-        fn v -> String.length(v) <= 32 end
-      ],
-      nome: [
-        fn v -> is_bitstring(v) end,
-        fn v -> String.length(v) <= 100 end
-      ],
-      nascimento: [
-        fn v -> is_bitstring(v) end,
-        fn v -> match?({:ok, _}, Date.from_iso8601(v)) end
-      ],
-      stack: [
-        fn v -> is_nil(v) || is_list(v) end,
-        fn v -> Enum.all?(v || [], &is_bitstring/1) end
-      ]
-    }
-
-    cond do
-      # Apelidos.get(body.apelido) ->
-      #   send_resp(conn, 422, "")
-
-      not Enum.all?(required, fn k -> Map.get(body, k) end) ->
-        send_resp(conn, 422, "")
-
-      not Enum.all?(body_rules, fn {k, rules} -> Enum.all?(rules, fn f -> f.(body[k]) end) end) ->
-        send_resp(conn, 400, "")
-
-      true ->
+    case validate(user) do
+      :ok ->
         id = UUID.generate()
+        Apelidos.save(user.apelido)
 
-        Apelidos.save(body.apelido)
-
-        body
-        |> Map.put(:id, id)
+        user
+        |> Map.update(:id, id, fn _ -> id end)
         |> UsersCache.insert()
 
-        body
+        user
         |> format_user_to_save(id)
         |> Queue.enqueue()
 
         conn
+        |> put_resp_content_type("application/json")
         |> put_resp_header("Location", "/pessoas/#{id}")
-        |> send_resp(201, id)
+        |> send_resp(201, "ok")
+
+      {status, error_message} ->
+        conn
+        |> put_resp_content_type("application/json")
+        |> send_resp(status, Jason.encode!(%{"error" => error_message}))
     end
   end
 
@@ -123,16 +89,11 @@ defmodule Rb.Router do
     |> send_resp(200, "#{rows}")
   end
 
-  def to_binary(uuid_string) when is_binary(uuid_string) do
-    parts = uuid_string |> String.split("-", parts: 5)
-    <<String.to_integer(Enum.join(parts), 16)::128>>
-  end
-
-  def binary_uuid(str) do
+  defp binary_uuid(str) do
     UUID.dump(str) |> then(fn {:ok, uuid} -> uuid end)
   end
 
-  def format_user_to_save(user, id) do
+  defp format_user_to_save(user, id) do
     Map.put(user, :id, binary_uuid(id))
     |> Map.update!(:nascimento, fn data -> Date.from_iso8601!(data) end)
   end
@@ -149,11 +110,11 @@ defmodule Rb.Router do
   defp string_to_list(""), do: []
   defp string_to_list(string), do: String.split(string, " ")
 
-  def validate(user_map) do
-    with :ok <- validate_apelido(user_map["apelido"]),
-         :ok <- validate_nome(user_map["nome"]),
-         :ok <- validate_nascimento(user_map["nascimento"]),
-         :ok <- validate_stack(user_map["stack"]) do
+  defp validate(user_map) do
+    with :ok <- validate_apelido(user_map.apelido),
+         :ok <- validate_nome(user_map.nome),
+         :ok <- validate_nascimento(user_map.nascimento),
+         :ok <- validate_stack(user_map.stack) do
       :ok
     else
       error -> error

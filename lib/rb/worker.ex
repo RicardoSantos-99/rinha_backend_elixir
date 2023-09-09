@@ -20,6 +20,7 @@ defmodule Rb.Worker do
       end)
 
     Repo.insert_all("users", entries)
+
     {:noreply, state}
   end
 

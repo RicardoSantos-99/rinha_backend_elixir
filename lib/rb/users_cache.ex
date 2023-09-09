@@ -8,8 +8,8 @@ defmodule Rb.UsersCache do
       nil ->
         GenServer.start_link(__MODULE__, %{}, name: {:global, __MODULE__})
 
-      _pid ->
-        :ignore
+      pid ->
+        {:ok, pid}
     end
   end
 

@@ -6,8 +6,6 @@ defmodule Rb.System do
   end
 
   def init(_) do
-    IO.inspect("Starting Rb.System")
-
     Supervisor.init(
       [
         Rb.Apelidos,

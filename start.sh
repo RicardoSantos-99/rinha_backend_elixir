@@ -10,4 +10,4 @@ if [ -z "$RELEASE_COOKIE" ]; then
     exit 1
 fi
 
-elixir --name $RELEASE_NODE --cookie $RELEASE_COOKIE -S mix run --no-halt
+elixir --sname $RELEASE_NODE --cookie $RELEASE_COOKIE -S mix run --no-halt
